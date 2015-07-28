@@ -12,7 +12,7 @@ namespace UserExporter
     {
         static void Main(string[] args)
         {
-            string apiKey = string.Empty, secretKey = string.Empty, fileName = string.Empty, identities = string.Empty;
+            string apiKey = string.Empty, userSecretKey = string.Empty, fileName = string.Empty, identities = string.Empty, userKey = string.Empty;
             int quantity = 0;
             Arguments CommandLine = new Arguments(args);
 
@@ -27,9 +27,17 @@ namespace UserExporter
             if (CommandLine["s"] != null || CommandLine["secretkey"] != null)
             {
                 if (CommandLine["s"] != null)
-                    secretKey = CommandLine["s"];
+                    userSecretKey = CommandLine["s"];
                 else
-                    secretKey = CommandLine["secretkey"];
+                    userSecretKey = CommandLine["secretkey"];
+            }
+
+            if (CommandLine["u"] != null || CommandLine["userkey"] != null)
+            {
+                if (CommandLine["u"] != null)
+                    userKey = CommandLine["u"];
+                else
+                    userKey = CommandLine["userkey"];
             }
 
             if (CommandLine["q"] != null || CommandLine["quantity"] != null)
@@ -48,17 +56,17 @@ namespace UserExporter
                     fileName = CommandLine["filename"];
             }
 
-            identities = GetUsers(apiKey, secretKey, quantity);
+            identities = GetUsers(apiKey, userSecretKey, userKey ,quantity);
             WriteToFile(identities, fileName);
             Console.WriteLine("export finished");
         }
 
-        private static string GetUsers(string apiKey, string secretKey,int quantity, string cursor = "")
+        private static string GetUsers(string apiKey, string userSecretKey, string userKey,int quantity, string cursor = "")
         {
             if (quantity < 1)
                 return string.Empty;
             string openCursor = string.Empty;
-            int limit = 100, counter = quantity;
+            int limit = 50, counter = quantity;
              
             if (!(cursor.Equals("")))
             {
@@ -74,7 +82,7 @@ namespace UserExporter
            
             obj.Put("cursorId", openCursor);
 
-            GSResponse res = new GSRequest(apiKey: apiKey, secretKey: secretKey, apiMethod: "accounts.search", clientParams: obj, useHTTPS: true).Send();
+            GSResponse res = new GSRequest(apiKey: apiKey, secretKey: userSecretKey, apiMethod: "accounts.search", clientParams: obj, userKey: userKey, useHTTPS: true).Send();
             GSArray array = res.GetArray("results", new GSArray());
             
             foreach (GSObject component in array)
@@ -89,7 +97,7 @@ namespace UserExporter
             
             openCursor = res.GetString("nextCursorId", String.Empty);
             if (quantity > limit)
-                return result + GetUsers(apiKey, secretKey, quantity - array.Length, openCursor);
+                return result + GetUsers(apiKey, userSecretKey, userKey, quantity - array.Length, openCursor);
             else return result;
             
         }
